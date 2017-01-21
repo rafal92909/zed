@@ -69,7 +69,7 @@ ileBrakujacych <- function(zbior){
 kable(apply(sledzie,2,ileBrakujacych))
 ```
 <br /><br />
-W kolumnach, w których wystêpuj± Warto¶ci puste, ilo¶æ NA nie oscyluje w okolicach 3%, a wiêc nie ma potrzeby usuwania ¿adnej z kolumn z procesu analizy danych. 
+W kolumnach, w których wystêpuj± warto¶ci puste, ilo¶æ NA oscyluje w okolicach 3%, a wiêc nie ma potrzeby usuwania ¿adnej z kolumn z procesu analizy danych. 
 <br />
 Poni¿szy wykres przedstawia ilo¶æ warto¶ci pustych w ka¿dej z kolumn.
 
@@ -87,7 +87,7 @@ ggplot(ile, aes(factor(nazwa_kolumny))) +
   theme_bw()
 
 ```
-<br /><br /><br />Brakuj±ce warto¶ci zostan± uzupe³nione przy u¿yciu funkcji mice nale¿±cej do pakietu mice. Funkcja brakuj±ce elementy w ka¿dej z kolumn, warto¶ci± ¶redni± ca³ej kolumny. 
+<br /><br /><br />Brakuj±ce warto¶ci zostan± uzupe³nione przy u¿yciu funkcji mice nale¿±cej do pakietu mice. Funkcja zastêpuje brakuj±ce elementy warto¶ci± ¶redni± kolumny, w której dana warto¶æ pusta siê znajduje. 
 
 ```{r usun_braki, results='hide', message=FALSE}
 # https://datascienceplus.com/imputing-missing-data-with-r-mice-package/
@@ -117,13 +117,8 @@ Zbiór danych sk³ada siê z 15 atrybutów. Opisuj± one:
 <li>miesi±c po³owu (xmonth).</li>
 </ul>
 
-dlugosc sledzia, a uplyw czasu
-``` {r echo=FALSE}
-ggplot(data=sledzie, aes(length)) + 
-  geom_histogram(breaks=seq(19, 33, by = 0.5)) + 
-  xlab("length (d³ugo¶æ)") + 
-  ylab("liczba obserwacji")
-```
+
+
 ###7. Sekcja sprawdzaj±ca korelacje miêdzy zmiennymi
  
 ``` {r echo=FALSE}
@@ -137,21 +132,24 @@ corrplot(korelacja, method="number")
 ggplot(sledzie, aes(chel1, lcop1)) + 
   geom_point() + 
   labs(title = "Korelacja pomiêdzy chel1 i lcop1") + 
-  geom_smooth(method="glm")
+  geom_smooth(method="glm") +
+  theme_bw()
 ```
 <br /><br />
 ``` {r echo=FALSE}
 ggplot(sledzie, aes(chel2, lcop2)) + 
   geom_point() + 
   labs(title = "Korelacja pomiêdzy chel2 i lcop2") + 
-  geom_smooth(method="glm")
+  geom_smooth(method="glm") + 
+  theme_bw()
 ```
 <br /><br />
 ``` {r echo=FALSE}
 ggplot(sledzie, aes(fbar, cumf)) + 
   geom_point() + 
   labs(title = "Korelacja pomiêdzy fbar i cumf") + 
-  geom_smooth(method="glm")
+  geom_smooth(method="glm") +
+  theme_bw()
 ```
 <br /><br />
 
@@ -161,3 +159,20 @@ ggplot(sledzie, aes(fbar, cumf)) +
  <li>chel2 i lcop2</li>
  <li>fbar i cumf</li>
  </ul>
+ 
+ 
+ 
+###8. Zmiana rozmiaru ¶ledzia w czasie
+``` {r sledz_w_czasie, echo=FALSE,  results='hide', message=FALSE}
+
+ggplot(sledzie, aes(x=X, y=length)) + 
+  geom_point(size = 0.1) + 
+  geom_smooth() + 
+  labs(
+    title = "Zmiana rozmiaru ¶ledzia w czasie", 
+    x = "Czas", 
+    y = "Rozmiar ¶ledzia [cm]") +
+  theme_bw()
+
+```
+
