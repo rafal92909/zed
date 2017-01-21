@@ -1,0 +1,163 @@
+---
+title: "Sledzie"
+author: "Rafal Meller"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+###1. Kod wyliczaj±cy wykorzystane biblioteki:
+
+```{r biblioteki, results='hide', message=FALSE}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(mice)
+library(knitr)
+library(corrplot)
+```
+
+
+
+###2. Kod zapewniaj±cy powtarzalno¶æ wyników przy ka¿dym uruchomieniu raportu na tych samych danych:
+
+```{r setSeed}
+set.seed(69)
+```
+
+
+
+###3. Kod pozwalaj±cy wczytaæ dane z pliku:
+
+```{r readCsvSledzie}
+sledzie <-read.csv("sledzie.csv", sep = ",", na.strings = "?", header = TRUE)
+```
+
+
+
+###4. Kod przetwarzaj±cy brakuj±ce dane.
+
+``` {r echo=FALSE}
+ile_sledzi <- nrow(sledzie)
+sledzie_NA <- sledzie[rowSums(is.na(sledzie)) > 0,]
+ile_sledzi_NA <- nrow(sledzie_NA)
+```
+
+W zbiorze danych liczba wszystkich rekordów wynosi:
+``` {r echo=FALSE}
+ile_sledzi
+```
+W zbiorze danych liczba rekordów, które zawieraj± warto¶æ NA wynosi:
+``` {r echo=FALSE}
+ile_sledzi_NA
+```
+Nie mo¿emy usun±æ rekordów z warto¶ciami pustymi poniewa¿ stanowi± one prawie 20% ca³ego zbioru.
+``` {r echo=FALSE}
+paste(round(ile_sledzi_NA/ile_sledzi*100, digits = 2), "%")
+```
+Dane przedstawione poni¿ej pokazuj± ilo¶æ warto¶ci NA w ka¿dej z kolumn w procentach:
+```{r ileBrakujacych, echo=FALSE}
+ileBrakujacych <- function(zbior){
+  i <- sum(is.na(zbior))/length(zbior)*100
+  paste(round(i, digits = 2), "%")
+}
+kable(apply(sledzie,2,ileBrakujacych))
+```
+<br /><br />
+W kolumnach, w których wystêpuj± Warto¶ci puste, ilo¶æ NA nie oscyluje w okolicach 3%, a wiêc nie ma potrzeby usuwania ¿adnej z kolumn z procesu analizy danych. 
+<br />
+Poni¿szy wykres przedstawia ilo¶æ warto¶ci pustych w ka¿dej z kolumn.
+
+```{r ile_na_wykres, echo=FALSE}
+ile <- sledzie %>%
+  gather(nazwa_kolumny, wartosc, 1:ncol(sledzie)) %>%
+  filter(is.na(wartosc))
+
+ggplot(ile, aes(factor(nazwa_kolumny))) +
+  geom_bar() +
+  labs(
+      title = "Ilo¶æ brakuj±cych warto¶ci w ka¿dej z kolumn", 
+      x = "Nazwa kolumny", 
+      y = "Ilo¶æ brakuj±cych warto¶ci") + 
+  theme_bw()
+
+```
+<br /><br /><br />Brakuj±ce warto¶ci zostan± uzupe³nione przy u¿yciu funkcji mice nale¿±cej do pakietu mice. Funkcja brakuj±ce elementy w ka¿dej z kolumn, warto¶ci± ¶redni± ca³ej kolumny. 
+
+```{r usun_braki, results='hide', message=FALSE}
+# https://datascienceplus.com/imputing-missing-data-with-r-mice-package/
+sledzie <- mice(sledzie, m=1, method='mean', seed=69, echo=FALSE)
+sledzie <- complete(sledzie, 1)
+
+```
+
+
+
+###5. Sekcja podsumowuj±c± rozmiar zbioru i podstawowe statystyki.
+
+``` {r echo=FALSE}
+kable(summary(sledzie))
+```
+
+
+
+###6. Analiza atrybutów
+Zbiór danych sk³ada siê z 15 atrybutów. Opisuj± one:
+<ul>
+<li>d³ugo¶æ z³owionego ¶ledzia (length),</li>
+<li>dostêpno¶æ planktonu (cfin1, cfin2, chel1, chel2, lcop1, lcop2),</li>
+<li>narybek (fbar, recr, cumf),</li>
+<li>³±czn± liczbê z³owionych ryb w ramach po³owu (totaln)</li>
+<li>wodê (sst, sal, nao),</li>
+<li>miesi±c po³owu (xmonth).</li>
+</ul>
+
+dlugosc sledzia, a uplyw czasu
+``` {r echo=FALSE}
+ggplot(data=sledzie, aes(length)) + 
+  geom_histogram(breaks=seq(19, 33, by = 0.5)) + 
+  xlab("length (d³ugo¶æ)") + 
+  ylab("liczba obserwacji")
+```
+###7. Sekcja sprawdzaj±ca korelacje miêdzy zmiennymi
+ 
+``` {r echo=FALSE}
+sledzie_korelacja <- select(sledzie, -c(X))
+korelacja <- cor(sledzie_korelacja)
+corrplot(korelacja, method="number")
+```
+
+<br /><br />
+``` {r echo=FALSE}
+ggplot(sledzie, aes(chel1, lcop1)) + 
+  geom_point() + 
+  labs(title = "Korelacja pomiêdzy chel1 i lcop1") + 
+  geom_smooth(method="glm")
+```
+<br /><br />
+``` {r echo=FALSE}
+ggplot(sledzie, aes(chel2, lcop2)) + 
+  geom_point() + 
+  labs(title = "Korelacja pomiêdzy chel2 i lcop2") + 
+  geom_smooth(method="glm")
+```
+<br /><br />
+``` {r echo=FALSE}
+ggplot(sledzie, aes(fbar, cumf)) + 
+  geom_point() + 
+  labs(title = "Korelacja pomiêdzy fbar i cumf") + 
+  geom_smooth(method="glm")
+```
+<br /><br />
+
+ Z powy¿szych wykresów mo¿na zaobserwowaæ, ¿e najbardziej skorelowanyne ze sob± s± pary atrybutów:
+ <ul>
+ <li>chel1 i lcop1</li>
+ <li>chel2 i lcop2</li>
+ <li>fbar i cumf</li>
+ </ul>
