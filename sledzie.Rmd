@@ -187,7 +187,13 @@ ggplotly(sledzie_interaktywne)
 
 
 ###9. Regresor przewiduj±cy rozmiar ¶ledzia
-``` {r regresja, echo=FALSE, message=FALSE}
+W naszym przypadku regresja ma za zadanie stworzyæ model, który bêdzie przewidywa³ d³ugo¶æ ¶ledzi w czasie.
+Dane wej¶copwe s± oczyszczone z warto¶ci pustych, a atrybuty chel1,chel2, fbar usuniête, ze wzglêdu na siln± korelacjê.
+Zbiór danych podzielony zosta³ na dane ucz±ce, waliduj±ce i testowe.
+Tak przygotowe dane zostan± poddane procesowi uczenia przy pomocy algorytmu random forest.
+
+
+``` {r regresja, echo=FALSE}
 inT <- createDataPartition(y = sledzie$length, p = .7, list = FALSE)
 
 sledzie_treningowe <- sledzie[inT, ]
@@ -202,12 +208,17 @@ rfFit <- train(length ~ .,
   importance = TRUE,
   ntree = 10)
 
-
 sledzie_testowe2 <- select(sledzie_testowe, -c(length, X))
 przewidywania <- predict(rfFit, sledzie_testowe2)
+```
+<br />
+Trafno¶æ rekgrasji zosta³a oszacowana na podstawie miar R<sup>2</sup> i RMSE.
+``` {r regresja_oszacowanie, echo=FALSE}
 kable(postResample(pred = przewidywania, obs = sledzie_testowe$length))
-
-
+```
+<br /><br /><br />
+Poni¿szy wykres przedstawia przewidywan± zmianê d³ugo¶ci ¶ledzia w czasie.
+``` {r regresja_wykres, echo=FALSE, message=FALSE}
 ggplot(data.frame(Length = przewidywania),aes(x = 1:length(Length), y=Length)) + 
   geom_smooth() +
   coord_cartesian(ylim = c(24, 27)) +
