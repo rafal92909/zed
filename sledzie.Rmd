@@ -1,8 +1,12 @@
 ---
-title: "Sledzie"
-author: "Rafal Meller"
+title: "¦ledzie"
+author: "Rafal Meller 106450"
 date: "`r format(Sys.time(), '%d %B %Y')`"
-output: html_document
+output: 
+  html_document:
+    number_sections: yes
+    toc_float: yes
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -11,7 +15,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 
-###1. Kod wyliczaj±cy wykorzystane biblioteki:
+# Podsumowanie
+Analiza ma na celu odpowied¼ na pytanie dlaczego rozmiar ¶ledzia w pewnym momencie zacz±³ maleæ. <br />
+Analizowany zbiór danych zawiera prawie 53 tys. rekordóW, które zosta³y zebrane na przestrzeni ostatnich 60 lat. Niestyty, w przypadku a¿ 20% rekordów brakowa³o warto¶ci niektórych atrybutów, które zosta³y uzupe³nione warto¶ciami ¶rednimi danego atrybutu.<br />
+W zbiorze wystêpuje silna korelacja trzech par atrybutów (chel1 i lcop1, chel2 i lcop2, cumf i fbar). Ze wzglêdu na korelacjê, zbiór danych zosta³ odchudzony o trzy atrybuty (chel1,chel2, fbar).<br />
+Nastêpnie, wykonana zosta³a regresja, która przewiduje zmianê rozmiaru ¶ledzia w czasie oraz przeprowadzona zosta³a analiza wa¿no¶ci atrybutów.
+Analiza ta, pokazuje, ¿e bezpo¶redni wp³yw na spadek d³ugo¶ci ¶ledzia ma miesi±c po³owu, a tak¿e dostêpno¶æ okre¶lonych gatunkóW planktou (Calanus finmarchicus gat. 2 oraz wid³onogów gat. 1) oraz temperatura wody zmierzona tu¿ przy jej powierzchni.
+
+
+# Kod wyliczaj±cy wykorzystane biblioteki:
 
 ```{r biblioteki, results='hide', message=FALSE}
 library(tidyr)
@@ -27,15 +39,15 @@ library(caret)
 
 
 
-###2. Kod zapewniaj±cy powtarzalno¶æ wyników przy ka¿dym uruchomieniu raportu na tych samych danych:
+# Kod zapewniaj±cy powtarzalno¶æ wyników przy ka¿dym uruchomieniu raportu na tych samych danych:
 
 ```{r setSeed}
-set.seed(69)
+set.seed(67)
 ```
 
 
 
-###3. Kod pozwalaj±cy wczytaæ dane z pliku:
+# Kod pozwalaj±cy wczytaæ dane z pliku:
 
 ```{r readCsvSledzie}
 sledzie <-read.csv("sledzie.csv", sep = ",", na.strings = "?", header = TRUE)
@@ -43,7 +55,7 @@ sledzie <-read.csv("sledzie.csv", sep = ",", na.strings = "?", header = TRUE)
 
 
 
-###4. Kod przetwarzaj±cy brakuj±ce dane.
+# Kod przetwarzaj±cy brakuj±ce dane.
 
 ``` {r echo=FALSE}
 ile_sledzi <- nrow(sledzie)
@@ -92,16 +104,16 @@ ggplot(ile, aes(factor(nazwa_kolumny))) +
 ```
 <br /><br /><br />Brakuj±ce warto¶ci zostan± uzupe³nione przy u¿yciu funkcji mice nale¿±cej do pakietu mice. Funkcja zastêpuje brakuj±ce elementy warto¶ci± ¶redni± kolumny, w której dana warto¶æ pusta siê znajduje. 
 
-```{r usun_braki, results='hide', message=FALSE}
+```{r usun_braki, results='hide', message=FALSE, echo=FALSE}
 # https://datascienceplus.com/imputing-missing-data-with-r-mice-package/
-sledzie <- mice(sledzie, m=1, method='mean', seed=69, echo=FALSE)
+sledzie <- mice(sledzie, m=1, method='mean', seed=67, echo=FALSE)
 sledzie <- complete(sledzie, 1)
 
 ```
 
 
 
-###5. Sekcja podsumowuj±c± rozmiar zbioru i podstawowe statystyki.
+# Sekcja podsumowuj±c± rozmiar zbioru i podstawowe statystyki.
 
 ``` {r echo=FALSE}
 kable(summary(sledzie))
@@ -109,7 +121,8 @@ kable(summary(sledzie))
 
 
 
-###6. Analiza atrybutów
+# Analiza atrybutów
+
 Zbiór danych sk³ada siê z 15 atrybutów. Opisuj± one:
 <ul>
 <li>d³ugo¶æ z³owionego ¶ledzia (length),</li>
@@ -122,14 +135,13 @@ Zbiór danych sk³ada siê z 15 atrybutów. Opisuj± one:
 
 
 
-###7. Sekcja sprawdzaj±ca korelacje miêdzy zmiennymi
+# Sekcja sprawdzaj±ca korelacje miêdzy zmiennymi
  
 ``` {r echo=FALSE}
 sledzie_korelacja <- select(sledzie, -c(X))
 korelacja <- cor(sledzie_korelacja)
 corrplot(korelacja, method="number")
 ```
-
 <br /><br />
 ``` {r echo=FALSE}
 ggplot(sledzie, aes(chel1, lcop1)) + 
@@ -155,7 +167,6 @@ ggplot(sledzie, aes(fbar, cumf)) +
   theme_bw()
 ```
 <br /><br />
-
  Z powy¿szych wykresów mo¿na zaobserwowaæ, ¿e najbardziej skorelowanyne ze sob± s± pary atrybutów:
  <ul>
  <li>chel1 i lcop1</li>
@@ -163,14 +174,14 @@ ggplot(sledzie, aes(fbar, cumf)) +
  <li>fbar i cumf</li>
  </ul>
  
- Na tej podstawie mo¿emy usun±æ trzy atrybuty (chel1, chel2, fbar) z przetwarzanego zbioru danych
+ Na tej podstawie mo¿emy usun±æ trzy atrybuty (chel1, chel2, fbar) z przetwarzanego zbioru danych/
 ``` {r echo=FALSE} 
  sledzie <- select(sledzie, -c(chel1,chel2, fbar))
 ```
  
 
  
-###8. Zmiana rozmiaru ¶ledzia w czasie - wykres interakty
+# Zmiana rozmiaru ¶ledzia w czasie - wykres interakty
 
 ``` {r sledz_w_czasie, message=FALSE, echo=FALSE }
 
@@ -186,13 +197,12 @@ ggplotly(sledzie_interaktywne)
 
 
 
-###9. Regresor przewiduj±cy rozmiar ¶ledzia
+# Regresor przewiduj±cy rozmiar ¶ledzia
+
 W naszym przypadku regresja ma za zadanie stworzyæ model, który bêdzie przewidywa³ d³ugo¶æ ¶ledzi w czasie.
 Dane wej¶copwe s± oczyszczone z warto¶ci pustych, a atrybuty chel1,chel2, fbar usuniête, ze wzglêdu na siln± korelacjê.
 Zbiór danych podzielony zosta³ na dane ucz±ce, waliduj±ce i testowe.
 Tak przygotowe dane zostan± poddane procesowi uczenia przy pomocy algorytmu random forest.
-
-
 ``` {r regresja, echo=FALSE}
 inT <- createDataPartition(y = sledzie$length, p = .7, list = FALSE)
 
@@ -208,7 +218,7 @@ rfFit <- train(length ~ .,
   importance = TRUE,
   ntree = 10)
 
-sledzie_testowe2 <- select(sledzie_testowe, -c(length, X))
+sledzie_testowe2 <- select(sledzie_testowe, -c(X, length))
 przewidywania <- predict(rfFit, sledzie_testowe2)
 ```
 <br />
@@ -227,6 +237,15 @@ ggplot(data.frame(Length = przewidywania),aes(x = 1:length(Length), y=Length)) +
     x = "Czas", 
     y = "Rozmiar ¶ledzia [cm]") +
   theme_bw()
+```
 
 
+
+# Analiza wa¿no¶ci atrybutów 
+
+Analiza wa¿no¶ci atrybutóW dowodzi, ¿e najwiêkszy wp³yw na spadek d³ugo¶ci ¶ledzia ma miesi±c po³owu. Znacz±cy wp³ywa ma równie¿ dostêpno¶æ planktonów Calanus finmarchicus gat. 2 oraz wid³onogów gat. 1, a tak¿e temperatura przy powiedzchni wody. <br />Natomiast na d³ugo¶æ ¶ledzia nie ma wp³ywu roczny narybek ani oscylacja pó³nocnoatlantycka. Reszta atrybutów ma znikomy wp³yw.
+```{r waznosc, echo=FALSE}
+waznosc <- varImp(rfFit)
+waznosc
+plot(waznosc)
 ```
