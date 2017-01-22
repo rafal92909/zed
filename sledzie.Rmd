@@ -2,11 +2,13 @@
 title: "¦ledzie"
 author: "Rafal Meller 106450"
 date: "`r format(Sys.time(), '%d %B %Y')`"
-output: 
+always_allow_html: yes
+output:
   html_document:
+    keep_md: yes
     number_sections: yes
-    toc_float: yes
     toc: yes
+    toc_float: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -181,7 +183,7 @@ ggplot(sledzie, aes(fbar, cumf)) +
  
 
  
-# Zmiana rozmiaru ¶ledzia w czasie - wykres interakty
+# Zmiana rozmiaru ¶ledzia w czasie - wykres interaktywny
 
 ``` {r sledz_w_czasie, message=FALSE, echo=FALSE }
 
