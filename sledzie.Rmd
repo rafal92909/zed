@@ -17,9 +17,12 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
+library(plotly)
 library(mice)
 library(knitr)
 library(corrplot)
+library(randomForest)
+library(caret)
 ```
 
 
@@ -160,19 +163,59 @@ ggplot(sledzie, aes(fbar, cumf)) +
  <li>fbar i cumf</li>
  </ul>
  
+ Na tej podstawie mo¿emy usun±æ trzy atrybuty (chel1, chel2, fbar) z przetwarzanego zbioru danych
+``` {r echo=FALSE} 
+ sledzie <- select(sledzie, -c(chel1,chel2, fbar))
+```
  
- 
-###8. Zmiana rozmiaru ¶ledzia w czasie
-``` {r sledz_w_czasie, echo=FALSE,  results='hide', message=FALSE}
 
-ggplot(sledzie, aes(x=X, y=length)) + 
-  geom_point(size = 0.1) + 
+ 
+###8. Zmiana rozmiaru ¶ledzia w czasie - wykres interakty
+
+``` {r sledz_w_czasie, message=FALSE, echo=FALSE }
+
+sledzie_interaktywne <- ggplot(sledzie, aes(x=X, y=length)) + 
   geom_smooth() + 
   labs(
     title = "Zmiana rozmiaru ¶ledzia w czasie", 
     x = "Czas", 
     y = "Rozmiar ¶ledzia [cm]") +
   theme_bw()
-
+ggplotly(sledzie_interaktywne)
 ```
 
+
+
+###9. Regresor przewiduj±cy rozmiar ¶ledzia
+``` {r regresja, echo=FALSE, message=FALSE}
+inT <- createDataPartition(y = sledzie$length, p = .7, list = FALSE)
+
+sledzie_treningowe <- sledzie[inT, ]
+sledzie_treningowe <- select(sledzie_treningowe, -X)
+sledzie_testowe <- sledzie[-inT, ]
+
+ctrl <- trainControl(method = "repeatedcv", number = 2, repeats = 5)
+rfFit <- train(length ~ .,
+  data = sledzie_treningowe,
+  method = "rf",
+  trControl = ctrl,
+  importance = TRUE,
+  ntree = 10)
+
+
+sledzie_testowe2 <- select(sledzie_testowe, -c(length, X))
+przewidywania <- predict(rfFit, sledzie_testowe2)
+kable(postResample(pred = przewidywania, obs = sledzie_testowe$length))
+
+
+ggplot(data.frame(Length = przewidywania),aes(x = 1:length(Length), y=Length)) + 
+  geom_smooth() +
+  coord_cartesian(ylim = c(24, 27)) +
+    labs(
+    title = "Zmiana rozmiaru ¶ledzia w czasie - predykcja", 
+    x = "Czas", 
+    y = "Rozmiar ¶ledzia [cm]") +
+  theme_bw()
+
+
+```
